@@ -10,7 +10,7 @@ export const CreateSession: React.FC = () => {
   const [formData, setFormData] = useState({
     title: '',
     creatorName: '',
-    purpose: 'Verifikasi Jaringan'
+    purpose: 'Kirim Lokasi Saat Ini'
   });
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -23,7 +23,7 @@ export const CreateSession: React.FC = () => {
       
       const sessionData = {
         id: sessionId,
-        title: formData.title || 'Sesi Diagnosa',
+        title: formData.title || 'Sesi Share Lokasi',
         creatorName: formData.creatorName,
         purpose: formData.purpose,
         aiMessage: aiMessage,
@@ -31,16 +31,14 @@ export const CreateSession: React.FC = () => {
         receivedLocations: []
       };
 
-      // SIMPAN KE CLOUD
       await syncToCloud(sessionId, sessionData);
 
-      // Simpan ID lokal agar muncul di riwayat
       const existing = JSON.parse(localStorage.getItem('locateMe_sessions') || '[]');
-      localStorage.setItem('locateMe_sessions', JSON.stringify([{ id: sessionId, title: sessionData.title }, ...existing]));
+      localStorage.setItem('locateMe_sessions', JSON.stringify([{ id: sessionId, title: sessionData.title, creatorName: sessionData.creatorName, createdAt: sessionData.createdAt, receivedLocations: [] }, ...existing]));
       
       navigate(`/share/${sessionId}`);
     } catch (error) {
-      alert('Gagal membuat sesi cloud.');
+      alert('Gagal membuat sesi di cloud.');
     } finally {
       setLoading(false);
     }
@@ -49,25 +47,25 @@ export const CreateSession: React.FC = () => {
   return (
     <div className="max-w-md mx-auto px-6 py-12">
       <header className="mb-10 text-center">
-        <h2 className="text-3xl font-extrabold text-slate-900 mb-2">Konfigurasi Stealth</h2>
-        <p className="text-slate-500 text-sm">Target akan melihat ini sebagai uji jaringan teknis.</p>
+        <h2 className="text-3xl font-extrabold text-slate-900 mb-2">Buat Link Share Lokasi</h2>
+        <p className="text-slate-500 text-sm">Target akan diminta mengirimkan koordinat saat ini satu kali.</p>
       </header>
       
       <form onSubmit={handleCreate} className="space-y-6">
         <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
           <div>
-            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Nama Sesi (Internal)</label>
+            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Nama Sesi</label>
             <input 
-              type="text" required placeholder="Contoh: Target A"
+              type="text" required placeholder="Contoh: Titik Temu Makan Malam"
               className="w-full px-4 py-3.5 rounded-2xl bg-slate-50 border border-slate-100 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all text-sm font-medium"
               value={formData.title}
               onChange={(e) => setFormData({...formData, title: e.target.value})}
             />
           </div>
           <div>
-            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Samaran Pengirim</label>
+            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Nama Anda / Institusi</label>
             <input 
-              type="text" required placeholder="Contoh: Admin Jaringan / Logistik"
+              type="text" required placeholder="Contoh: Andi / Admin Logistik"
               className="w-full px-4 py-3.5 rounded-2xl bg-slate-50 border border-slate-100 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all text-sm font-medium"
               value={formData.creatorName}
               onChange={(e) => setFormData({...formData, creatorName: e.target.value})}
@@ -80,7 +78,7 @@ export const CreateSession: React.FC = () => {
           type="submit"
           className="w-full bg-slate-900 text-white font-bold py-5 rounded-3xl shadow-xl hover:bg-slate-800 disabled:opacity-70 transition-all flex items-center justify-center gap-3"
         >
-          {loading ? "Mempersiapkan Jalur Cloud..." : "Aktifkan Link Stealth"}
+          {loading ? "Menghubungkan ke Cloud..." : "Dapatkan Link Berbagi"}
         </button>
       </form>
     </div>

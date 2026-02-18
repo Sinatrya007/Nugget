@@ -9,19 +9,14 @@ export const ShareLink: React.FC = () => {
   const [session, setSession] = useState<any>(null);
 
   useEffect(() => {
-    // Coba ambil dari localStorage dulu (untuk data lokal)
     const sessions = JSON.parse(localStorage.getItem('locateMe_sessions') || '[]');
     const found = sessions.find((s: any) => s.id === id);
     setSession(found);
-    
-    // Jika tidak ada di lokal, aplikasi tetap bisa lanjut karena data akan ditarik dari Cloud di halaman detail
   }, [id]);
 
   const getShareUrl = () => {
-    // Cara paling aman untuk GitHub Pages (menangani domain/subfolder)
     const origin = window.location.origin;
     const pathname = window.location.pathname;
-    // Menghasilkan URL lengkap dengan hash route
     return `${origin}${pathname}#/l/${id}`;
   };
 
@@ -37,11 +32,12 @@ export const ShareLink: React.FC = () => {
     <div className="max-w-md mx-auto px-6 py-12 text-center animate-in fade-in duration-500">
       <div className="mb-6 inline-block p-4 bg-indigo-600 text-white rounded-3xl shadow-lg shadow-indigo-100">
         <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.828a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
         </svg>
       </div>
-      <h2 className="text-3xl font-extrabold mb-2 text-slate-900">Link Siap Disebar</h2>
-      <p className="text-slate-500 mb-8 text-sm px-4">Tautan ini telah terhubung ke jalur Cloud Sync. Data akan muncul di dashboard Anda secara real-time.</p>
+      <h2 className="text-3xl font-extrabold mb-2 text-slate-900">Link Siap Dikirim</h2>
+      <p className="text-slate-500 mb-8 text-sm px-4">Tautan ini meminta satu kali snapshot lokasi koordinat dari target Anda.</p>
 
       <div className="bg-white p-2 pl-5 rounded-2xl border border-slate-200 shadow-sm mb-6 flex items-center gap-3">
         <input 
@@ -61,15 +57,15 @@ export const ShareLink: React.FC = () => {
         <div className="absolute top-0 right-0 p-2 opacity-5">
           <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
         </div>
-        <p className="text-[10px] uppercase font-bold text-slate-400 tracking-widest mb-2">Pesan Penyamaran:</p>
-        <p className="text-slate-700 italic text-sm font-medium leading-relaxed leading-relaxed">
-          {session?.aiMessage || "Mohon lakukan sinkronisasi jaringan melalui tautan sistem di atas."}
+        <p className="text-[10px] uppercase font-bold text-slate-400 tracking-widest mb-2">Pesan Untuk Target:</p>
+        <p className="text-slate-700 italic text-sm font-medium leading-relaxed">
+          {session?.aiMessage || "Mohon kirimkan koordinat lokasi Anda saat ini melalui tautan di atas."}
         </p>
       </div>
 
       <div className="flex flex-col gap-3">
         <button 
-          onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent((session?.aiMessage || "Sinkronisasi Jaringan") + "\n\n" + shareUrl)}`)}
+          onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent((session?.aiMessage || "Permintaan Lokasi") + "\n\n" + shareUrl)}`)}
           className="flex items-center justify-center gap-2 bg-[#25D366] text-white font-bold py-4 rounded-2xl hover:opacity-90 transition-all shadow-lg shadow-green-100"
         >
           Kirim via WhatsApp
@@ -78,13 +74,13 @@ export const ShareLink: React.FC = () => {
           onClick={() => navigate(`/session/${id}`)}
           className="bg-white border border-slate-200 text-slate-700 font-bold py-4 rounded-2xl hover:bg-slate-50 transition-all active:scale-95"
         >
-          Buka Dashboard Pantau
+          Lihat Dashboard Penerimaan
         </button>
       </div>
       
       <div className="mt-12 flex items-center justify-center gap-2">
-        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Cloud Relay Active</p>
+        <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
+        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Single Snapshot Mode Active</p>
       </div>
     </div>
   );

@@ -19,7 +19,6 @@ export const SessionDetail: React.FC = () => {
     };
 
     fetchData();
-    // POLLING: Cek data baru setiap 5 detik
     const interval = setInterval(fetchData, 5000);
     return () => clearInterval(interval);
   }, [id]);
@@ -28,7 +27,7 @@ export const SessionDetail: React.FC = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-4">
         <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent animate-spin rounded-full"></div>
-        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Menghubungkan ke Cloud...</p>
+        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Sinkronisasi Cloud...</p>
       </div>
     );
   }
@@ -36,31 +35,31 @@ export const SessionDetail: React.FC = () => {
   return (
     <div className="max-w-3xl mx-auto px-6 py-12">
       <div className="mb-10">
-        <button onClick={() => navigate('/dashboard')} className="text-xs font-bold text-indigo-600 mb-4 uppercase tracking-widest">← Kembali</button>
+        <button onClick={() => navigate('/dashboard')} className="text-xs font-bold text-indigo-600 mb-4 uppercase tracking-widest">← Kembali ke Dashboard</button>
         <h1 className="text-4xl font-black text-slate-900">{session.title}</h1>
         <p className="text-slate-500 text-sm mt-2">ID Sesi: <span className="font-mono bg-slate-100 px-2 py-0.5 rounded text-indigo-600">{id}</span></p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
         <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-          <p className="text-[10px] font-bold text-slate-400 uppercase mb-2">Data Masuk</p>
+          <p className="text-[10px] font-bold text-slate-400 uppercase mb-2">Total Lokasi Diterima</p>
           <p className="text-4xl font-black text-slate-900">{session.receivedLocations?.length || 0}</p>
         </div>
         <div className="bg-indigo-600 p-6 rounded-3xl shadow-lg shadow-indigo-100 text-white">
-          <p className="text-[10px] font-bold opacity-70 uppercase mb-2">Status Cloud</p>
+          <p className="text-[10px] font-bold opacity-70 uppercase mb-2">Mode Operasi</p>
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-            <p className="text-xl font-bold">Sinkron Aktif</p>
+            <div className="w-2 h-2 bg-indigo-300 rounded-full"></div>
+            <p className="text-xl font-bold">Snapshot (Sekali Share)</p>
           </div>
         </div>
       </div>
 
       <div className="space-y-6">
-        <h2 className="text-xl font-black text-slate-900">Live Activity Log</h2>
+        <h2 className="text-xl font-black text-slate-900">Riwayat Lokasi Diterima</h2>
         
         {(!session.receivedLocations || session.receivedLocations.length === 0) ? (
           <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-[2.5rem] py-20 text-center">
-            <p className="text-slate-400 text-sm italic">Menunggu target membuka link...</p>
+            <p className="text-slate-400 text-sm italic">Menunggu target menekan tombol kirim lokasi...</p>
           </div>
         ) : (
           [...session.receivedLocations].reverse().map((loc: any, i: number) => (
@@ -68,9 +67,9 @@ export const SessionDetail: React.FC = () => {
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">
-                    {new Date(loc.time).toLocaleTimeString()}
+                    TERKIRIM PADA {new Date(loc.time).toLocaleTimeString()}
                   </p>
-                  <p className="text-lg font-bold text-slate-900">Koordinat Diterima</p>
+                  <p className="text-lg font-bold text-slate-900">Titik Koordinat Terdeteksi</p>
                 </div>
                 <div className="bg-indigo-50 text-indigo-600 text-[10px] font-bold px-3 py-1 rounded-full">
                   AKURASI ±{Math.round(loc.acc)}M

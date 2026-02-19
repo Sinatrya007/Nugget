@@ -3,6 +3,7 @@ import { createServer as createViteServer } from 'vite';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
@@ -28,10 +29,12 @@ const getSupabase = () => {
 const localCaptures: any[] = [];
 
 async function startServer() {
+  console.log('Starting server initialization...');
   const app = express();
   const PORT = 3000;
 
   app.use(express.json());
+  console.log('Express middleware configured.');
 
   // API to get captured locations (for the dashboard)
   app.get('/api/captures', (req, res) => {
@@ -160,14 +163,37 @@ async function startServer() {
     }
   });
 
+  console.log('API routes configured.');
+
   // Vite middleware for development
   if (process.env.NODE_ENV !== 'production') {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: 'spa',
-    });
-    app.use(vite.middlewares);
+    console.log('Initializing Vite dev server middleware...');
+    try {
+      const vite = await createViteServer({
+        server: { middlewareMode: true },
+        appType: 'spa',
+      });
+      app.use(vite.middlewares);
+      
+      // Explicitly serve index.html for the root path in dev
+      app.use('*', async (req, res, next) => {
+        const url = req.originalUrl;
+        try {
+          let template = fs.readFileSync(path.resolve(__dirname, 'index.html'), 'utf-8');
+          template = await vite.transformIndexHtml(url, template);
+          res.status(200).set({ 'Content-Type': 'text/html' }).end(template);
+        } catch (e) {
+          vite.ssrFixStacktrace(e as Error);
+          next(e);
+        }
+      });
+      
+      console.log('Vite middleware attached.');
+    } catch (e) {
+      console.error('Failed to initialize Vite middleware:', e);
+    }
   } else {
+    console.log('Running in production mode, serving static files...');
     app.use(express.static(path.join(__dirname, 'dist')));
     app.get('*', (req, res) => {
       res.sendFile(path.join(__dirname, 'dist', 'index.html'));
@@ -175,8 +201,11 @@ async function startServer() {
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`>>> Server is listening on http://0.0.0.0:${PORT}`);
   });
 }
 
-startServer();
+console.log('Executing startServer()...');
+startServer().catch(err => {
+  console.error('FATAL: Failed to start server:', err);
+});

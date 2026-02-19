@@ -1,6 +1,6 @@
 {
-  "name": "SpotSync - Smart Meeting Coordinator",
-  "description": "Professional coordination tool for precise meeting points and logistics synchronization.",
+  "name": "CloakSync - URL Cloaker & Tracker",
+  "description": "Professional URL cloaking tool that transforms any landing page into a location tracking link with real-time Supabase integration.",
   "requestFramePermissions": [
     "geolocation"
   ]

